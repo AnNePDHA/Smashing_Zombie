@@ -138,9 +138,9 @@ class GameScreen(Screen):
 
         self.hit_count = 0
         self.miss_count = 0
-        self.time_countdown = 10
         self.got_hit = False
         
+        self.time_countdown = 15
         self.font_name = pygame.font.Font('Fonts/SairaSemiCondensed-SemiBold.ttf', 50)
         
         self.hammerSound = mixer.Sound("BGM/hammer.mp3")
@@ -171,6 +171,9 @@ class GameScreen(Screen):
         if self.time_countdown <= 0:
             end_game_screen.active = True
             game_screen.active = False
+            self.time_countdown = 15
+            self.miss_count = 0
+            self.hit_count = 0
         m_pos = pygame.mouse.get_pos()
         self.mouse_pos = (m_pos[0] - MOUSE_OFFSET[0], m_pos[1] - MOUSE_OFFSET[1])
         if (self.elapsed_time < self.disappear_time) & (self.zombie_state == ZombieState.APPEAR):
@@ -216,20 +219,37 @@ class EndGameScreen(Screen):
     def __init__(self):
         self.background = pygame.image.load('Game Arts/Finish.png')
         self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.tryAgain = pygame.image.load('Game Arts/TryAgain1.png')
-        self.tryAgain = pygame.transform.scale(self.tryAgain, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.tryAgainHover = pygame.image.load('Game Arts/TryAgain2.png')
-        self.tryAgainHover = pygame.transform.scale(self.tryAgainHover, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.button_idle = pygame.image.load('Game Arts/TryAgain1.png')
+        self.button_idle = pygame.transform.scale(self.button_idle, BUTTON_SIZE)
+        self.button_hover = pygame.image.load('Game Arts/TryAgain2.png')
+        self.button_hover = pygame.transform.scale(self.button_hover, BUTTON_SIZE)
         self.button_rect = pygame.Rect(BUTTON_POSITION[0], BUTTON_POSITION[1], BUTTON_SIZE[0], BUTTON_SIZE[1])
         self.button_state = ButtonState.IDLE
 
     def handle_events(self, events):
-        pass
-
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif event.type == pygame.MOUSEMOTION:
+                if self.button_rect.collidepoint(event.pos):
+                    self.button_state = ButtonState.HOVER
+                else:
+                    self.button_state = ButtonState.IDLE
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                game_screen.active = True
+                main_menu_screen.active = False
+                end_game_screen.active = False
+            
     def draw(self, screen):
         # Draw the background
         screen.blit(self.background, (0, 0))
 
+        # Draw the button
+        if self.button_state == ButtonState.IDLE:
+            screen.blit(self.button_idle, BUTTON_POSITION)
+        elif self.button_state == ButtonState.HOVER:
+            screen.blit(self.button_hover, BUTTON_POSITION)
 
 class ZombieGame:
     def __init__(self):
