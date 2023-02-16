@@ -23,6 +23,7 @@ BUTTON_POSITION = (SCREEN_WIDTH / 2 - 195, SCREEN_HEIGHT / 2 + 90)
 MISS_POS = (350, 25)
 HIT_POS = (125, 25)
 TIME_POS = (1500, 25)
+SCORE_POS = (690, 460)
 
 # Define FPS
 FPS = 60
@@ -90,8 +91,9 @@ class MainMenuScreen(Screen):
                 else:
                     self.button_state = ButtonState.IDLE
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                game_screen.active = True
-                main_menu_screen.active = False
+                if self.button_rect.collidepoint(event.pos):
+                    game_screen.active = True
+                    main_menu_screen.active = False
 
     def draw(self, screen):
         # Draw the background
@@ -114,11 +116,11 @@ class GameScreen(Screen):
         self.zombie = pygame.transform.scale(self.zombie, (self.zombie.get_width()*0.8, self.zombie.get_height()*0.8))
         self.zombie_collider = self.zombie.get_rect().inflate(-125, -85)
         
-        #Zombie dies
+        # Zombie dies
         self.zombie_dies = pygame.image.load('Game Arts/Zombie_Die.png')
         self.zombie_dies = pygame.transform.scale(self.zombie_dies, (self.zombie_dies.get_width()*0.8, self.zombie_dies.get_height()*0.8))
         self.zombie_dies_collider = self.zombie_dies.get_rect().inflate(-125, -85)
-        #End Zombie dies
+        # End Zombie dies
         
         self.mouse_idle = pygame.image.load('Game Arts/Hammer0.png')
         self.mouse_idle = pygame.transform.scale(self.mouse_idle, (self.mouse_idle.get_width() * 0.7, self.mouse_idle.get_height() * 0.7))
@@ -160,6 +162,9 @@ class GameScreen(Screen):
                 if (self.zombie_collider.colliderect(self.mouse_collider)) & (self.zombie_state == ZombieState.APPEAR):
                     self.hit_count += 1
                     self.got_hit = True
+                    if self.appear_time > 0.5:
+                        self.appear_time -= 5/FPS
+                        self.disappear_time -= 5/FPS
                 else:
                     self.miss_count += 1
             else:
@@ -171,6 +176,9 @@ class GameScreen(Screen):
         if self.time_countdown <= 0:
             end_game_screen.active = True
             game_screen.active = False
+            end_game_screen.score = self.hit_count * 5 - self.miss_count
+            self.disappear_time = 1
+            self.appear_time = 1
             self.time_countdown = 15
             self.miss_count = 0
             self.hit_count = 0
@@ -189,12 +197,12 @@ class GameScreen(Screen):
     def draw(self, screen):
         # Draw the background
         screen.blit(self.background, (0, 0))
-        #Fix here
+        # Fix here
         if self.zombie_state == ZombieState.APPEAR:
             self.zombie_collider.x = self.rand_position[0] + 65
             self.zombie_collider.y = self.rand_position[1] + 25
             
-            if self.got_hit == True:
+            if self.got_hit:
                 self.zombieDieSound.play()
                 screen.blit(self.zombie_dies, self.rand_position)
             else: 
@@ -225,6 +233,8 @@ class EndGameScreen(Screen):
         self.button_hover = pygame.transform.scale(self.button_hover, BUTTON_SIZE)
         self.button_rect = pygame.Rect(BUTTON_POSITION[0], BUTTON_POSITION[1], BUTTON_SIZE[0], BUTTON_SIZE[1])
         self.button_state = ButtonState.IDLE
+        self.font_name = pygame.font.Font('Fonts/SairaSemiCondensed-SemiBold.ttf', 50)
+        self.score = 0
 
     def handle_events(self, events):
         for event in events:
@@ -237,19 +247,22 @@ class EndGameScreen(Screen):
                 else:
                     self.button_state = ButtonState.IDLE
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                game_screen.active = True
-                main_menu_screen.active = False
-                end_game_screen.active = False
+                if self.button_rect.collidepoint(event.pos):
+                    game_screen.active = True
+                    end_game_screen.active = False
             
     def draw(self, screen):
         # Draw the background
         screen.blit(self.background, (0, 0))
+
+        screen.blit(self.font_name.render('SCORE: ' + str(int(self.score)), 1, BLACK), SCORE_POS)
 
         # Draw the button
         if self.button_state == ButtonState.IDLE:
             screen.blit(self.button_idle, BUTTON_POSITION)
         elif self.button_state == ButtonState.HOVER:
             screen.blit(self.button_hover, BUTTON_POSITION)
+
 
 class ZombieGame:
     def __init__(self):
