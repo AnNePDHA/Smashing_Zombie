@@ -1,4 +1,5 @@
 import enum
+from pickle import TRUE
 import random
 
 import pygame
@@ -148,6 +149,8 @@ class GameScreen(Screen):
         self.hammerSound = mixer.Sound("BGM/hammer.mp3")
         self.zombieDieSound = mixer.Sound("BGM/zombie-death.mp3")
 
+        self.particleSystem = []
+
     def handle_events(self, events):
         for event in events:
             if event.type == pygame.QUIT:
@@ -194,6 +197,9 @@ class GameScreen(Screen):
         elif self.elapsed_time >= self.appear_time + self.disappear_time:
             self.start_time = pygame.time.get_ticks()
 
+        #for particle in self.particleSystem:
+         #   particle.Play()
+
     def draw(self, screen):
         # Draw the background
         screen.blit(self.background, (0, 0))
@@ -203,6 +209,10 @@ class GameScreen(Screen):
             self.zombie_collider.y = self.rand_position[1] + 25
             
             if self.got_hit:
+                newParticle = ParticleSystem(self.zombie_collider.x + 25, self.zombie_collider.y + 25, screen)
+                newParticle.Reset()
+                self.particleSystem.append(newParticle)
+
                 self.zombieDieSound.play()
                 screen.blit(self.zombie_dies, self.rand_position)
             else: 
@@ -221,6 +231,9 @@ class GameScreen(Screen):
 
         # Draw time countdown
         screen.blit(self.font_name.render(str(int(self.time_countdown)), 1, BLACK), TIME_POS)
+
+        for particle in self.particleSystem:
+            particle.Play()
 
 
 class EndGameScreen(Screen):
@@ -300,6 +313,32 @@ class ZombieGame:
 
             self.clock.tick(FPS)
 
+class ParticleSystem:
+    def __init__(self, x = 0, y = 0, screen = None):
+        self.particles = []
+        self.x = x
+        self.y = y
+        self.screen = screen
+        self.num = 0
+
+    def Play(self):
+        if(self.particles):
+            for particle in self.particles:
+                particle[0][0] += particle[1][0]
+                particle[0][1] += particle[1][1]
+                particle[1][1] += 0.1
+                particle[2] -= 20 / FPS
+                pygame.draw.circle(self.screen, (255, 50, 50), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
+                if(particle[2] <= 0):
+                    self.particles.remove(particle)
+
+
+    def Reset(self):
+        self.particles = []
+        self.num = random.randint(3, 10)
+        for i in range (0, self.num + 1):
+            self.particles.append([[self.x, self.y], [random.randint(0, 30) / 10 - 1, random.randint(-3, 3)], random.randint(5, 10)])
+        
 
 if __name__ == "__main__":
 
