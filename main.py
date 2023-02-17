@@ -180,8 +180,8 @@ class GameScreen(Screen):
                     self.hit_count += 1
                     self.got_hit = True
                     if self.appear_time > 0.5:
-                        self.appear_time -= 5/FPS
-                        self.disappear_time -= 5/FPS
+                        self.appear_time -= 1/FPS
+                        self.disappear_time -= 1/FPS
                 else:
                     self.miss_count += 1
             else:
