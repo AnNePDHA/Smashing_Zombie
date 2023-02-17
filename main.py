@@ -25,8 +25,8 @@ MISS_POS = (350, 25)
 HIT_POS = (125, 25)
 TIME_POS = (1500, 25)
 SCORE_POS = (690, 460)
-HITTED_POS = (490, 760)
-MISSED_POS = (890, 760)
+HITTED_POS = (610, 760)
+MISSED_POS = (840, 760)
 
 # Define FPS
 FPS = 60
@@ -232,7 +232,7 @@ class GameScreen(Screen):
             self.zombie_collider.y = self.rand_position[1] + 25
             
             if self.got_hit:
-                newParticle = ParticleSystem(self.zombie_collider.x + 25, self.zombie_collider.y + 25, screen)
+                newParticle = ParticleSystem(self.zombie_collider.x + random.randint(25, 35), self.zombie_collider.y + random.randint(25, 35), screen)
                 newParticle.Reset()
                 self.particleSystem.append(newParticle)
 
@@ -314,8 +314,8 @@ class EndGameScreen(Screen):
         screen.blit(self.background, (0, 0))
 
         screen.blit(self.font_name.render('SCORE: ' + str(int(self.score)), 1, BLACK), SCORE_POS)
-        screen.blit(self.font_name.render('HITTED: ' + str(int(self.hitted)), 1, WHITE), HITTED_POS)
-        screen.blit(self.font_name.render('MISSED: ' + str(int(self.missed)), 1, RED), MISSED_POS)
+        screen.blit(self.font_name.render('HIT: ' + str(int(self.hitted)), 1, WHITE), HITTED_POS)
+        screen.blit(self.font_name.render('MISS: ' + str(int(self.missed)), 1, RED), MISSED_POS)
 
         # Draw the button
         if self.button_state == ButtonState.IDLE:
@@ -382,7 +382,7 @@ class ParticleSystem:
 
     def Reset(self):
         self.particles = []
-        self.num = random.randint(3, 10)
+        self.num = random.randint(2, 5)
         for i in range (0, self.num + 1):
             self.particles.append([[self.x, self.y], [random.randint(0, 30) / 10 - 1, random.randint(-3, 3)], random.randint(5, 10)])
         
