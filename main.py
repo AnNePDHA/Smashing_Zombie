@@ -49,6 +49,9 @@ class HammerState(enum.Enum):
     IDLE = 0
     SMASH = 1
 
+class ZombieType(enum.Enum):
+    LEFT = 0
+    RIGHT = 1
 
 # Define random position
 RAND_POSITION = [(80, 280), (690, 280), (1250, 280), (80, 580), (690, 580), (1250, 580)]
@@ -114,7 +117,10 @@ class GameScreen(Screen):
     def __init__(self):
         self.background = pygame.image.load('Game Arts/Background1.png')
         self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        
+
+        self.zombieType = ZombieType.RIGHT
+        self.zombiePrevType = self.zombieType
+
         self.zombie = pygame.image.load('Game Arts/Zombie.png')
         self.zombie = pygame.transform.scale(self.zombie, (self.zombie.get_width()*0.8, self.zombie.get_height()*0.8))
         self.zombie_collider = self.zombie.get_rect().inflate(-125, -85)
@@ -206,6 +212,10 @@ class GameScreen(Screen):
         elif (self.elapsed_time < self.appear_time + self.disappear_time) & (self.elapsed_time >= self.disappear_time) & (self.zombie_state == ZombieState.DISAPPEAR):
             self.rand_position = random.choice(RAND_POSITION)
             self.zombie_state = ZombieState.APPEAR
+            self.zombieType = random.choice(list(ZombieType))
+            if(self.zombieType != self.zombiePrevType):
+                self.loadRandomZombieType()
+                self.zombiePrevType = self.zombieType
         elif self.elapsed_time >= self.appear_time + self.disappear_time:
             self.start_time = pygame.time.get_ticks()
 
@@ -248,6 +258,25 @@ class GameScreen(Screen):
         for particle in self.particleSystem:
             particle.Play()
 
+    def loadRandomZombieType(self):
+        if(self.zombieType == ZombieType.RIGHT):
+            self.zombie = pygame.image.load('Game Arts/Zombie.png')
+            self.zombie = pygame.transform.scale(self.zombie, (self.zombie.get_width()*0.8, self.zombie.get_height()*0.8))
+            self.zombie_collider = self.zombie.get_rect().inflate(-125, -85)
+        
+            # Zombie dies
+            self.zombie_dies = pygame.image.load('Game Arts/Zombie_Die.png')
+            self.zombie_dies = pygame.transform.scale(self.zombie_dies, (self.zombie_dies.get_width()*0.8, self.zombie_dies.get_height()*0.8))
+            self.zombie_dies_collider = self.zombie_dies.get_rect().inflate(-125, -85)
+        elif(self.zombieType == ZombieType.LEFT):
+            self.zombie = pygame.image.load('Game Arts/Zombie1.png')
+            self.zombie = pygame.transform.scale(self.zombie, (self.zombie.get_width()*0.8, self.zombie.get_height()*0.8))
+            self.zombie_collider = self.zombie.get_rect().inflate(-125, -85)
+        
+            # Zombie dies
+            self.zombie_dies = pygame.image.load('Game Arts/Zombie_Die1.png')
+            self.zombie_dies = pygame.transform.scale(self.zombie_dies, (self.zombie_dies.get_width()*0.8, self.zombie_dies.get_height()*0.8))
+            self.zombie_dies_collider = self.zombie_dies.get_rect().inflate(-125, -85)
 
 class EndGameScreen(Screen):
     def __init__(self):
