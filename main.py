@@ -153,12 +153,18 @@ class GameScreen(Screen):
 
         self.particleSystem = []
 
+        self.reloadHammerStateTime = 100
+        self.hammerSmashTime = 0
+        self.allowChangeHammerState = True
+
     def handle_events(self, events):
         for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.hammerSmashTime = pygame.time.get_ticks()
+                self.allowChangeHammerState = False
                 self.hammer_state = HammerState.SMASH
                 self.hammerSound.play()
                 # Define Miss Event
@@ -173,7 +179,8 @@ class GameScreen(Screen):
                 else:
                     self.miss_count += 1
             else:
-                self.hammer_state = HammerState.IDLE
+                if(self.allowChangeHammerState):
+                    self.hammer_state = HammerState.IDLE
 
     def update(self):
         self.elapsed_time = (pygame.time.get_ticks() - self.start_time) / 1000
@@ -189,6 +196,7 @@ class GameScreen(Screen):
             self.time_countdown = 15
             self.miss_count = 0
             self.hit_count = 0
+            mixer.music.fadeout(3000)
         m_pos = pygame.mouse.get_pos()
         self.mouse_pos = (m_pos[0] - MOUSE_OFFSET[0], m_pos[1] - MOUSE_OFFSET[1])
         if (self.elapsed_time < self.disappear_time) & (self.zombie_state == ZombieState.APPEAR):
@@ -201,8 +209,9 @@ class GameScreen(Screen):
         elif self.elapsed_time >= self.appear_time + self.disappear_time:
             self.start_time = pygame.time.get_ticks()
 
-        #for particle in self.particleSystem:
-         #   particle.Play()
+        if(pygame.time.get_ticks() - self.hammerSmashTime >= self.reloadHammerStateTime):
+            self.allowChangeHammerState = True
+            self.hammer_state = HammerState.IDLE
 
     def draw(self, screen):
         # Draw the background
@@ -267,6 +276,7 @@ class EndGameScreen(Screen):
                     self.button_state = ButtonState.IDLE
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if self.button_rect.collidepoint(event.pos):
+                    mixer.music.play(-1)
                     game_screen.active = True
                     end_game_screen.active = False
             
