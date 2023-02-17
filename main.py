@@ -327,7 +327,7 @@ class ParticleSystem:
                 particle[0][0] += particle[1][0]
                 particle[0][1] += particle[1][1]
                 particle[1][1] += 0.1
-                particle[2] -= 20 / FPS
+                particle[2] -= 15 / FPS
                 pygame.draw.circle(self.screen, (255, 50, 50), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
                 if(particle[2] <= 0):
                     self.particles.remove(particle)
