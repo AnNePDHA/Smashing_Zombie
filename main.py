@@ -25,6 +25,8 @@ MISS_POS = (350, 25)
 HIT_POS = (125, 25)
 TIME_POS = (1500, 25)
 SCORE_POS = (690, 460)
+HITTED_POS = (490, 760)
+MISSED_POS = (890, 760)
 
 # Define FPS
 FPS = 60
@@ -180,6 +182,8 @@ class GameScreen(Screen):
             end_game_screen.active = True
             game_screen.active = False
             end_game_screen.score = self.hit_count * 5 - self.miss_count
+            end_game_screen.hitted = self.hit_count
+            end_game_screen.missed = self.miss_count
             self.disappear_time = 1
             self.appear_time = 1
             self.time_countdown = 15
@@ -248,6 +252,8 @@ class EndGameScreen(Screen):
         self.button_state = ButtonState.IDLE
         self.font_name = pygame.font.Font('Fonts/SairaSemiCondensed-SemiBold.ttf', 50)
         self.score = 0
+        self.hitted = 0
+        self.missed = 0
 
     def handle_events(self, events):
         for event in events:
@@ -269,6 +275,8 @@ class EndGameScreen(Screen):
         screen.blit(self.background, (0, 0))
 
         screen.blit(self.font_name.render('SCORE: ' + str(int(self.score)), 1, BLACK), SCORE_POS)
+        screen.blit(self.font_name.render('HITTED: ' + str(int(self.hitted)), 1, WHITE), HITTED_POS)
+        screen.blit(self.font_name.render('MISSED: ' + str(int(self.missed)), 1, RED), MISSED_POS)
 
         # Draw the button
         if self.button_state == ButtonState.IDLE:
