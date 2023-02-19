@@ -1,4 +1,5 @@
 import enum
+from pickle import TRUE
 import random
 
 import pygame
@@ -24,6 +25,8 @@ MISS_POS = (350, 25)
 HIT_POS = (125, 25)
 TIME_POS = (1500, 25)
 SCORE_POS = (690, 460)
+HITTED_POS = (610, 760)
+MISSED_POS = (840, 760)
 
 # Define FPS
 FPS = 60
@@ -46,6 +49,9 @@ class HammerState(enum.Enum):
     IDLE = 0
     SMASH = 1
 
+class ZombieType(enum.Enum):
+    LEFT = 0
+    RIGHT = 1
 
 # Define random position
 RAND_POSITION = [(80, 280), (690, 280), (1250, 280), (80, 580), (690, 580), (1250, 580)]
@@ -111,7 +117,10 @@ class GameScreen(Screen):
     def __init__(self):
         self.background = pygame.image.load('Game Arts/Background1.png')
         self.background = pygame.transform.scale(self.background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        
+
+        self.zombieType = ZombieType.RIGHT
+        self.zombiePrevType = self.zombieType
+
         self.zombie = pygame.image.load('Game Arts/Zombie.png')
         self.zombie = pygame.transform.scale(self.zombie, (self.zombie.get_width()*0.8, self.zombie.get_height()*0.8))
         self.zombie_collider = self.zombie.get_rect().inflate(-125, -85)
@@ -148,12 +157,20 @@ class GameScreen(Screen):
         self.hammerSound = mixer.Sound("BGM/hammer.mp3")
         self.zombieDieSound = mixer.Sound("BGM/zombie-death.mp3")
 
+        self.particleSystem = []
+
+        self.reloadHammerStateTime = 100
+        self.hammerSmashTime = 0
+        self.allowChangeHammerState = True
+
     def handle_events(self, events):
         for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.hammerSmashTime = pygame.time.get_ticks()
+                self.allowChangeHammerState = False
                 self.hammer_state = HammerState.SMASH
                 self.hammerSound.play()
                 # Define Miss Event
@@ -163,12 +180,13 @@ class GameScreen(Screen):
                     self.hit_count += 1
                     self.got_hit = True
                     if self.appear_time > 0.5:
-                        self.appear_time -= 5/FPS
-                        self.disappear_time -= 5/FPS
+                        self.appear_time -= 1/FPS
+                        self.disappear_time -= 1/FPS
                 else:
                     self.miss_count += 1
             else:
-                self.hammer_state = HammerState.IDLE
+                if(self.allowChangeHammerState):
+                    self.hammer_state = HammerState.IDLE
 
     def update(self):
         self.elapsed_time = (pygame.time.get_ticks() - self.start_time) / 1000
@@ -177,11 +195,14 @@ class GameScreen(Screen):
             end_game_screen.active = True
             game_screen.active = False
             end_game_screen.score = self.hit_count * 5 - self.miss_count
+            end_game_screen.hitted = self.hit_count
+            end_game_screen.missed = self.miss_count
             self.disappear_time = 1
             self.appear_time = 1
             self.time_countdown = 15
             self.miss_count = 0
             self.hit_count = 0
+            mixer.music.fadeout(3000)
         m_pos = pygame.mouse.get_pos()
         self.mouse_pos = (m_pos[0] - MOUSE_OFFSET[0], m_pos[1] - MOUSE_OFFSET[1])
         if (self.elapsed_time < self.disappear_time) & (self.zombie_state == ZombieState.APPEAR):
@@ -191,8 +212,16 @@ class GameScreen(Screen):
         elif (self.elapsed_time < self.appear_time + self.disappear_time) & (self.elapsed_time >= self.disappear_time) & (self.zombie_state == ZombieState.DISAPPEAR):
             self.rand_position = random.choice(RAND_POSITION)
             self.zombie_state = ZombieState.APPEAR
+            self.zombieType = random.choice(list(ZombieType))
+            if(self.zombieType != self.zombiePrevType):
+                self.loadRandomZombieType()
+                self.zombiePrevType = self.zombieType
         elif self.elapsed_time >= self.appear_time + self.disappear_time:
             self.start_time = pygame.time.get_ticks()
+
+        if(pygame.time.get_ticks() - self.hammerSmashTime >= self.reloadHammerStateTime):
+            self.allowChangeHammerState = True
+            self.hammer_state = HammerState.IDLE
 
     def draw(self, screen):
         # Draw the background
@@ -203,6 +232,10 @@ class GameScreen(Screen):
             self.zombie_collider.y = self.rand_position[1] + 25
             
             if self.got_hit:
+                newParticle = ParticleSystem(self.zombie_collider.x + random.randint(25, 35), self.zombie_collider.y + random.randint(25, 35), screen)
+                newParticle.Reset()
+                self.particleSystem.append(newParticle)
+
                 self.zombieDieSound.play()
                 screen.blit(self.zombie_dies, self.rand_position)
             else: 
@@ -222,6 +255,28 @@ class GameScreen(Screen):
         # Draw time countdown
         screen.blit(self.font_name.render(str(int(self.time_countdown)), 1, BLACK), TIME_POS)
 
+        for particle in self.particleSystem:
+            particle.Play()
+
+    def loadRandomZombieType(self):
+        if(self.zombieType == ZombieType.RIGHT):
+            self.zombie = pygame.image.load('Game Arts/Zombie.png')
+            self.zombie = pygame.transform.scale(self.zombie, (self.zombie.get_width()*0.8, self.zombie.get_height()*0.8))
+            self.zombie_collider = self.zombie.get_rect().inflate(-125, -85)
+        
+            # Zombie dies
+            self.zombie_dies = pygame.image.load('Game Arts/Zombie_Die.png')
+            self.zombie_dies = pygame.transform.scale(self.zombie_dies, (self.zombie_dies.get_width()*0.8, self.zombie_dies.get_height()*0.8))
+            self.zombie_dies_collider = self.zombie_dies.get_rect().inflate(-125, -85)
+        elif(self.zombieType == ZombieType.LEFT):
+            self.zombie = pygame.image.load('Game Arts/Zombie1.png')
+            self.zombie = pygame.transform.scale(self.zombie, (self.zombie.get_width()*0.8, self.zombie.get_height()*0.8))
+            self.zombie_collider = self.zombie.get_rect().inflate(-125, -85)
+        
+            # Zombie dies
+            self.zombie_dies = pygame.image.load('Game Arts/Zombie_Die1.png')
+            self.zombie_dies = pygame.transform.scale(self.zombie_dies, (self.zombie_dies.get_width()*0.8, self.zombie_dies.get_height()*0.8))
+            self.zombie_dies_collider = self.zombie_dies.get_rect().inflate(-125, -85)
 
 class EndGameScreen(Screen):
     def __init__(self):
@@ -235,6 +290,8 @@ class EndGameScreen(Screen):
         self.button_state = ButtonState.IDLE
         self.font_name = pygame.font.Font('Fonts/SairaSemiCondensed-SemiBold.ttf', 50)
         self.score = 0
+        self.hitted = 0
+        self.missed = 0
 
     def handle_events(self, events):
         for event in events:
@@ -248,6 +305,7 @@ class EndGameScreen(Screen):
                     self.button_state = ButtonState.IDLE
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if self.button_rect.collidepoint(event.pos):
+                    mixer.music.play(-1)
                     game_screen.active = True
                     end_game_screen.active = False
             
@@ -256,6 +314,8 @@ class EndGameScreen(Screen):
         screen.blit(self.background, (0, 0))
 
         screen.blit(self.font_name.render('SCORE: ' + str(int(self.score)), 1, BLACK), SCORE_POS)
+        screen.blit(self.font_name.render('HIT: ' + str(int(self.hitted)), 1, WHITE), HITTED_POS)
+        screen.blit(self.font_name.render('MISS: ' + str(int(self.missed)), 1, RED), MISSED_POS)
 
         # Draw the button
         if self.button_state == ButtonState.IDLE:
@@ -300,6 +360,32 @@ class ZombieGame:
 
             self.clock.tick(FPS)
 
+class ParticleSystem:
+    def __init__(self, x = 0, y = 0, screen = None):
+        self.particles = []
+        self.x = x
+        self.y = y
+        self.screen = screen
+        self.num = 0
+
+    def Play(self):
+        if(self.particles):
+            for particle in self.particles:
+                particle[0][0] += particle[1][0]
+                particle[0][1] += particle[1][1]
+                particle[1][1] += 0.1
+                particle[2] -= 15 / FPS
+                pygame.draw.circle(self.screen, (255, 50, 50), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
+                if(particle[2] <= 0):
+                    self.particles.remove(particle)
+
+
+    def Reset(self):
+        self.particles = []
+        self.num = random.randint(2, 5)
+        for i in range (0, self.num + 1):
+            self.particles.append([[self.x, self.y], [random.randint(0, 30) / 10 - 1, random.randint(-3, 3)], random.randint(5, 10)])
+        
 
 if __name__ == "__main__":
 
