@@ -232,7 +232,7 @@ class GameScreen(Screen):
             self.zombie_collider.y = self.rand_position[1] + 25
             
             if self.got_hit:
-                newParticle = ParticleSystem(self.zombie_collider.x + random.randint(25, 35), self.zombie_collider.y + random.randint(25, 35), screen)
+                newParticle = ParticleSystem(self.zombie_collider.x + random.randint(25, 45), self.zombie_collider.y + random.randint(25, 45), screen)
                 newParticle.Reset()
                 self.particleSystem.append(newParticle)
 
@@ -382,9 +382,9 @@ class ParticleSystem:
 
     def Reset(self):
         self.particles = []
-        self.num = random.randint(2, 5)
+        self.num = random.randint(5, 10)
         for i in range (0, self.num + 1):
-            self.particles.append([[self.x, self.y], [random.randint(0, 30) / 10 - 1, random.randint(-3, 3)], random.randint(5, 10)])
+            self.particles.append([[self.x, self.y], [random.randint(-30, 50) / 10 - 1, random.randint(-4, 4)], random.randint(5, 12)])
         
 
 if __name__ == "__main__":
