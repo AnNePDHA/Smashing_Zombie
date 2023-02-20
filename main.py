@@ -31,6 +31,9 @@ MISSED_POS = (840, 760)
 # Define FPS
 FPS = 60
 
+# Define interval
+INTERVAL = 10
+
 
 # Define button state
 class ButtonState(enum.Enum):
@@ -112,11 +115,11 @@ class GameScreen(Screen):
         self.zlist = []
         self.zlist.append(ZombieObject('Game Arts/Zombie.png', 'Game Arts/Zombie_Die.png', 1, 1))
         self.zlist.append(ZombieObject('Game Arts/Zombie1.png', 'Game Arts/Zombie_Die1.png', 1, 1))
-        self.zlist.append(ZombieObject('Game Arts/Zombie.png', 'Game Arts/Zombie_Die1.png', 1, 1))
-        self.zlist.append(ZombieObject('Game Arts/Zombie1.png', 'Game Arts/Zombie_Die.png', 1, 1))
 
         self.z_cur_list = []
+        HitMissMgr.update_znum()
         self.z_cur_list.append(random.choice(self.zlist))
+        self.zlist.remove(self.z_cur_list[-1])
 
         self.mouse_idle = pygame.image.load('Game Arts/Hammer0.png')
         self.mouse_idle = pygame.transform.scale(self.mouse_idle, (self.mouse_idle.get_width() * 0.7, self.mouse_idle.get_height() * 0.7))
@@ -128,7 +131,8 @@ class GameScreen(Screen):
         self.mouse_pos = pygame.mouse.get_pos()
         self.font_name = pygame.font.Font('Fonts/SairaSemiCondensed-SemiBold.ttf', 50)
         self.hammerSound = mixer.Sound("BGM/hammer.mp3")
-        self.time_countdown = 15
+        self.time_countdown = 30
+        self.interval = INTERVAL
         self.reloadHammerStateTime = 100
         self.hammerSmashTime = 0
         self.allowChangeHammerState = True
@@ -154,7 +158,10 @@ class GameScreen(Screen):
 
     def update(self):
         self.time_countdown -= 1/FPS
+        self.interval -= 1/FPS
         if self.time_countdown <= 0:
+            self.zlist.clear()
+            self.z_cur_list.clear()
             end_game_screen.active = True
             game_screen.active = False
             self.time_countdown = 15
@@ -163,6 +170,14 @@ class GameScreen(Screen):
         self.mouse_pos = (m_pos[0] - MOUSE_OFFSET[0], m_pos[1] - MOUSE_OFFSET[1])
         for z in self.z_cur_list:
             z.update()
+        if (self.interval <= 0) and (len(self.z_cur_list) < 4):
+            if len(self.zlist) <= 0:
+                self.zlist.append(ZombieObject('Game Arts/Zombie.png', 'Game Arts/Zombie_Die.png', 1, 1))
+                self.zlist.append(ZombieObject('Game Arts/Zombie1.png', 'Game Arts/Zombie_Die1.png', 1, 1))
+            HitMissMgr.update_znum()
+            self.z_cur_list.append(random.choice(self.zlist))
+            self.zlist.remove(self.z_cur_list[-1])
+            self.interval = INTERVAL
         if pygame.time.get_ticks() - self.hammerSmashTime >= self.reloadHammerStateTime:
             self.allowChangeHammerState = True
             self.hammer_state = HammerState.IDLE
@@ -216,10 +231,11 @@ class EndGameScreen(Screen):
                     self.button_state = ButtonState.IDLE
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if self.button_rect.collidepoint(event.pos):
+                    HitMissMgr.reset()
                     mixer.music.play(-1)
                     game_screen.active = True
+                    game_screen.__init__()
                     end_game_screen.active = False
-                    HitMissMgr.reset()
 
     def draw(self, screen):
         # Draw the background

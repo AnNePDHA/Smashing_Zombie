@@ -16,6 +16,8 @@ class ZombieState(enum.Enum):
     DISAPPEAR = 1
 
 
+zombie_num = 0
+random_pos_list = []
 hit_count = 0
 miss_count = 0
 
@@ -32,6 +34,27 @@ class HitMissMgr:
         miss_count += 1
 
     @staticmethod
+    def update_znum():
+        global zombie_num
+        zombie_num += 1
+
+    @staticmethod
+    def cache_pos(pos):
+        global random_pos_list
+        if pos not in random_pos_list:
+            for p in RAND_POSITION:
+                random_pos_list.append(p)
+        random_pos_list.remove(pos)
+
+    @staticmethod
+    def get_rand_pos():
+        global random_pos_list
+        if len(random_pos_list) <= 0:
+            for p in RAND_POSITION:
+                random_pos_list.append(p)
+        return random.choice(random_pos_list)
+
+    @staticmethod
     def get_hit():
         global hit_count
         return hit_count
@@ -45,8 +68,12 @@ class HitMissMgr:
     def reset():
         global hit_count
         global miss_count
+        global zombie_num
+        global random_pos_list
         hit_count = 0
         miss_count = 0
+        zombie_num = 0
+        random_pos_list.clear()
 
 
 class ZombieObject:
@@ -65,7 +92,8 @@ class ZombieObject:
         self.disappear_time = disappear
         self.start_time = pygame.time.get_ticks()
         self.elapsed_time = 0
-        self.rand_position = random.choice(RAND_POSITION)
+        self.rand_position = HitMissMgr.get_rand_pos()
+        HitMissMgr.cache_pos(self.rand_position)
         self.got_hit = False
 
         self.zombieDieSound = mixer.Sound("BGM/zombie-death.mp3")
@@ -74,7 +102,7 @@ class ZombieObject:
         if (self.zombie_collider.colliderect(mouse_collider)) & (self.zombie_state == ZombieState.APPEAR):
             HitMissMgr.update_hit()
             self.got_hit = True
-            if self.appear_time > 0.5:
+            if self.appear_time > 0.75:
                 self.appear_time -= 1 / FPS
                 self.disappear_time -= 1 / FPS
         else:
@@ -85,8 +113,9 @@ class ZombieObject:
         if (self.elapsed_time < self.disappear_time) & (self.zombie_state == ZombieState.APPEAR):
             self.zombie_state = ZombieState.DISAPPEAR
             self.got_hit = False
-        elif (self.elapsed_time < self.appear_time + self.disappear_time) & (self.elapsed_time >= self.disappear_time) & (self.zombie_state == ZombieState.DISAPPEAR):
-            self.rand_position = random.choice(RAND_POSITION)
+        elif (self.elapsed_time < self.appear_time + self.disappear_time) and (self.elapsed_time >= self.disappear_time) & (self.zombie_state == ZombieState.DISAPPEAR):
+            self.rand_position = HitMissMgr.get_rand_pos()
+            HitMissMgr.cache_pos(self.rand_position)
             self.zombie_state = ZombieState.APPEAR
         elif self.elapsed_time >= self.appear_time + self.disappear_time:
             self.start_time = pygame.time.get_ticks()
