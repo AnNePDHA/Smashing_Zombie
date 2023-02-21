@@ -131,6 +131,7 @@ class GameScreen(Screen):
         self.mouse_pos = pygame.mouse.get_pos()
         self.font_name = pygame.font.Font('Fonts/SairaSemiCondensed-SemiBold.ttf', 50)
         self.hammerSound = mixer.Sound("BGM/hammer.mp3")
+        self.tictokSound = mixer.Sound("BGM/count_down.wav")
         self.time_countdown = 30
         self.interval = INTERVAL
         self.reloadHammerStateTime = 100
@@ -168,6 +169,7 @@ class GameScreen(Screen):
         self.time_countdown -= 1/FPS
         self.interval -= 1/FPS
         if self.time_countdown <= 11:
+            self.tictokSound.play()
             self.toggleFinalCountdown = True
         if self.time_countdown <= 0:
             self.zlist.clear()
