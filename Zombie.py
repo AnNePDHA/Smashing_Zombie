@@ -105,8 +105,6 @@ class ZombieObject:
             if self.appear_time > 0.75:
                 self.appear_time -= 1 / FPS
                 self.disappear_time -= 1 / FPS
-        else:
-            HitMissMgr.update_miss()
 
     def update(self):
         self.elapsed_time = (pygame.time.get_ticks() - self.start_time) / 1000

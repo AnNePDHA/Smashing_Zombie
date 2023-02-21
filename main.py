@@ -137,6 +137,8 @@ class GameScreen(Screen):
         self.hammerSmashTime = 0
         self.allowChangeHammerState = True
 
+        self.got_hit = False
+
     def handle_events(self, events):
         for event in events:
             if event.type == pygame.QUIT:
@@ -150,8 +152,13 @@ class GameScreen(Screen):
                 # Define Miss Event
                 self.mouse_collider.x = self.mouse_pos[0] - 20
                 self.mouse_collider.y = self.mouse_pos[1]
+                self.got_hit = False
                 for z in self.z_cur_list:
                     z.handle_events(self.mouse_collider)
+                    if not self.got_hit:
+                        self.got_hit = z.got_hit
+                if not self.got_hit:
+                    HitMissMgr.update_miss()
             else:
                 if self.allowChangeHammerState:
                     self.hammer_state = HammerState.IDLE
