@@ -136,6 +136,7 @@ class GameScreen(Screen):
         self.reloadHammerStateTime = 100
         self.hammerSmashTime = 0
         self.allowChangeHammerState = True
+        self.toggleFinalCountdown = False
 
         self.got_hit = False
 
@@ -166,12 +167,14 @@ class GameScreen(Screen):
     def update(self):
         self.time_countdown -= 1/FPS
         self.interval -= 1/FPS
+        if self.time_countdown <= 11:
+            self.toggleFinalCountdown = True
         if self.time_countdown <= 0:
             self.zlist.clear()
             self.z_cur_list.clear()
             end_game_screen.active = True
             game_screen.active = False
-            self.time_countdown = 15
+            self.time_countdown = 0
             mixer.music.fadeout(3000)
         m_pos = pygame.mouse.get_pos()
         self.mouse_pos = (m_pos[0] - MOUSE_OFFSET[0], m_pos[1] - MOUSE_OFFSET[1])
@@ -208,7 +211,10 @@ class GameScreen(Screen):
         screen.blit(self.font_name.render(str(HitMissMgr.get_hit()), 1, BLACK), HIT_POS)
 
         # Draw time countdown
-        screen.blit(self.font_name.render(str(int(self.time_countdown)), 1, BLACK), TIME_POS)
+        if not self.toggleFinalCountdown:
+            screen.blit(self.font_name.render(str(int(self.time_countdown)), 1, BLACK), TIME_POS)
+        else:
+            screen.blit(self.font_name.render(str(int(self.time_countdown)), 1, RED), TIME_POS)
 
 
 class EndGameScreen(Screen):
